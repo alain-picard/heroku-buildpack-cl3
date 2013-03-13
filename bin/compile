@@ -17,7 +17,9 @@ function indent() {
 
 # 
 S3_BUCKET="cl-heroku"
-CCL_PACKAGE="http://${S3_BUCKET}.s3.amazonaws.com/ccl-1.7.tgz"
+# Find out official address FIXME
+# SBCL_PACKAGE= "http://${S3_BUCKET}.s3.amazonaws.com/ccl-1.7.tgz"
+SBCL_PACKAGE="/tmp/sbcl-1.0.58-x86-linux-binary.tar.bz2"
 
 # parse and derive params
 BUILDPACK_DIR=$(cd $(dirname $0); cd ..; pwd) # absolute path of buildpack
@@ -31,29 +33,28 @@ if [ $RESET_CACHE ]; then
   rm -rf $CACHE_DIR/*
 fi
 
-CCL_DIR="$CACHE_DIR/ccl"
+SBCL_DIR="$CACHE_DIR/sbcl"
 
-echo "-----> Installing ccl"
-if [ ! -d $CCL_DIR ]; then
-    echo "-----> Fetching ccl"
-    mkdir -p $CCL_DIR  && curl $CCL_PACKAGE -s -o -  | tar xzf - -C $CCL_DIR
+echo "-----> Installing sbcl"
+if [ ! -d $SBCL_DIR ]; then
+    echo "-----> Fetching sbcl"
+    mkdir -p $SBCL_DIR  && curl $SBCL_PACKAGE -s -o -  | tar xzf - -C $SBCL_DIR
 fi
 
 # add to slug 
-cp -r $CCL_DIR $BUILD_DIR
+cp -r $SBCL_DIR $BUILD_DIR
 
-echo "ccl installed" | indent
+echo "sbcl installed" | indent
 
 # setting up paths for building
 
 export BUILDPACK_DIR
 export CACHE_DIR
 export BUILD_DIR
-export CCL_DEFAULT_DIRECTORY=$CCL_DIR
+export SBCL_DEFAULT_DIRECTORY=$SBCL_DIR/sbcl-1.0.58-x86-linux
 
 echo "-----> Starting build"
-$CCL_DEFAULT_DIRECTORY/scripts/ccl64 -l "$BUILDPACK_DIR/setup/compile.lisp"
+$SBCL_DEFAULT_DIRECTORY/run-sbcl.sh --load "$BUILDPACK_DIR/setup/compile.lisp"
 echo "-----> Build finished"
 
 chmod a+x $BUILD_DIR/lispapp
-
