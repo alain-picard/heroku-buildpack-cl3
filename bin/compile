@@ -19,7 +19,8 @@ function indent() {
 S3_BUCKET="sbcl-heroku"
 SBCL_VERSION="1.0.55"
 LINUX_ARCH=$(uname -i | sed 's/_/-/g')-linux
-SBCL_PACKAGE="http://${S3_BUCKET}.s3.amazonaws.com/sbcl-${SBCL_VERSION}-${LINUX_ARCH}-binary.tar.bz2"
+#SBCL_PACKAGE="http://${S3_BUCKET}.s3.amazonaws.com/sbcl-${SBCL_VERSION}-${LINUX_ARCH}-binary.tar.bz2"
+SBCL_PACKAGE="http://sbcl-heroku.s3.amazonaws.com/sbcl-1.0.55-x86-64-linux-binary.tar.bz2"
 
 # parse and derive params
 BUILDPACK_DIR=$(cd $(dirname $0); cd ..; pwd) # absolute path of buildpack
@@ -51,10 +52,12 @@ echo "sbcl installed" | indent
 export BUILDPACK_DIR
 export CACHE_DIR
 export BUILD_DIR
-export SBCL_DEFAULT_DIRECTORY=$SBCL_DIR/sbcl-${SBCL_VERSION}-${LINUX_ARCH}
-
+#export SBCL_DEFAULT_DIRECTORY=$SBCL_DIR/sbcl-${SBCL_VERSION}-${LINUX_ARCH}
+export SBCL_DEFAULT_DIRECTORY=$SBCL_DIR/sbcl-1.0.55-x86-64-linux
+sbcl-1.0.54-x86-64-linux/run-sbcl.sh
 echo "-----> Starting build"
 bash $SBCL_DEFAULT_DIRECTORY/run-sbcl.sh --load "$BUILDPACK_DIR/setup/compile.lisp" --no-userinit
+
 echo "-----> Build finished"
 
 chmod a+x $BUILD_DIR/lispapp
