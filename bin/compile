@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# bin/compile <build-dir> <cache-dir>
+
+mktmpdir() {
+  dir=$(mktemp -t node-$1-XXXX)
+  rm -rf $dir
+  mkdir -p $dir
+  echo $dir
+}
+function indent() {
+  c='s/^/       /'
+  case $(uname) in
+    Darwin) sed -l "$c";;
+    *)      sed -u "$c";;
+  esac
+}
+
+# 
+S3_BUCKET="sbcl-heroku"
+SBCL_VERSION="1.0.55"
+# in dev
+LINUX_ARCH="x86-linux"
+# FIXME: in real Heroku
+# LINUX_ARCH="x86-linux-64"
+SBCL_PACKAGE="http://${S3_BUCKET}.s3.amazonaws.com/sbcl-${SBCL_VERSION}-${LINUX_ARCH}-binary.tar.bz2"
+
+# parse and derive params
+BUILDPACK_DIR=$(cd $(dirname $0); cd ..; pwd) # absolute path of buildpack
+BUILD_DIR=$1
+CACHE_DIR=$2
+
+echo "-----> compile params: $BUILD_DIR $CACHE_DIR"
+
+if [ $RESET_CACHE ]; then
+  echo "-----> flushing cache"
+  rm -rf $CACHE_DIR/*
+fi
+
+SBCL_DIR="$CACHE_DIR/sbcl"
+
+echo "-----> Installing sbcl"
+if [ ! -d $SBCL_DIR ]; then
+    echo "-----> Fetching sbcl"
+    mkdir -p $SBCL_DIR  && curl $SBCL_PACKAGE -s -o -  | tar xjf - -C $SBCL_DIR
+fi
+
+# add to slug 
+cp -r $SBCL_DIR $BUILD_DIR
+
+echo "sbcl installed" | indent
+
+# setting up paths for building
+
+export BUILDPACK_DIR
+export CACHE_DIR
+export BUILD_DIR
+export SBCL_DEFAULT_DIRECTORY=$SBCL_DIR/sbcl-${SBCL_VERSION}-${LINUX_ARCH}
+
+echo "-----> Starting build"
+bash $SBCL_DEFAULT_DIRECTORY/run-sbcl.sh --load "$BUILDPACK_DIR/setup/compile.lisp"
+echo "-----> Build finished"
+
+chmod a+x $BUILD_DIR/lispapp
